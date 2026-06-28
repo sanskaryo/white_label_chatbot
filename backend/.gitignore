@@ -1,0 +1,34 @@
+# Backend ignore rules
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+
+# Virtual env
+venv/
+env/
+.venv/
+
+# Logs
+*.log
+logs/
+
+# Environment files / secrets
+.env
+.env.local
+.env.*
+*.env
+!.env.example
+!.env.local.example
+!*.env.example
+!*.env.*.example
+
+# Local database and uploads
+workflow.db
+uploads/
+
+# Temporary files
+*.tmp
+*.temp
+*.bak
+.cache/

@@ -1,0 +1,62 @@
+# Python backend
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+
+# Virtual env
+venv/
+env/
+.venv/
+
+# Logs
+*.log
+logs/
+
+# Environment files / secrets
+.env
+.env.local
+.env.*
+*.env
+!.env.example
+!.env.local.example
+!*.env.example
+!*.env.*.example
+*.key
+*.pem
+backend/.env
+frontend/.env
+backend/.env.example
+frontend/.env.example
+
+# Local database and uploads
+backend/workflow.db
+uploads/
+uploads_data/
+
+# Frontend
+frontend/node_modules/
+frontend/dist/
+frontend/.vite/
+frontend/.cache/
+
+# Build artifacts
+build/
+dist/
+*.egg-info/
+.eggs/
+
+# IDE / editor
+.vscode/
+.idea/
+
+# OS files
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# Temporary files
+*.tmp
+*.temp
+*.bak
+.cache/

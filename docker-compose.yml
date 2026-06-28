@@ -1,0 +1,16 @@
+version: '3.8'
+
+services:
+  chatbot:
+    build: .
+    ports:
+      - "8000:8000"
+    env_file:
+      - backend/.env
+    volumes:
+      - uploads_data:/app/uploads
+      - ./backend/workflow.db:/app/workflow.db
+    restart: unless-stopped
+
+volumes:
+  uploads_data:

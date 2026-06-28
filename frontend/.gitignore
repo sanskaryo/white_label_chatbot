@@ -1,0 +1,110 @@
+# ================================
+# 🔹 PYTHON BACKEND
+# ================================
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+
+# Virtual env
+venv/
+env/
+.venv/
+
+# Logs
+*.log
+logs/
+
+# ================================
+# 🔹 ENV & SECRETS
+# ================================
+.env
+.env.*
+*.env
+*.key
+*.pem
+
+# ================================
+# 🔹 DATA (RAG PROJECT)
+# ================================
+# Raw / scraped data
+raw_html/
+scraped_data/
+data/
+
+# Large files
+*.csv
+*.tsv
+*.xlsx
+*.parquet
+
+# Optional docs
+*.pdf
+*.docx
+
+# ================================
+# 🔹 VECTOR DB / EMBEDDINGS
+# ================================
+*.faiss
+*.index
+*.pkl
+*.pickle
+
+embeddings_cache/
+faiss_index/
+chroma_db/
+vectorstore/
+
+# ================================
+# 🔹 REDIS
+# ================================
+dump.rdb
+appendonly.aof
+
+# ================================
+# 🔹 FRONTEND (React / Vite)
+# ================================
+frontend/node_modules/
+frontend/dist/
+frontend/.vite/
+frontend/.cache/
+
+# Logs
+frontend/npm-debug.log*
+frontend/yarn-debug.log*
+frontend/yarn-error.log*
+
+# ================================
+# 🔹 BUILD FILES
+# ================================
+build/
+dist/
+*.egg-info/
+.eggs/
+
+# ================================
+# 🔹 IDE / EDITOR
+# ================================
+.vscode/
+.idea/
+
+# ================================
+# 🔹 WINDOWS FILES
+# ================================
+Thumbs.db
+Desktop.ini
+
+# ================================
+# 🔹 TEST / CACHE
+# ================================
+.pytest_cache/
+.coverage
+htmlcov/
+
+# ================================
+# 🔹 TEMP FILES
+# ================================
+*.tmp
+*.temp
+*.bak
+.cache/
