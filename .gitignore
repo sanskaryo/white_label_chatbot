@@ -1,3 +1,6 @@
+# Context
+context/
+
 # Python backend
 __pycache__/
 *.py[cod]
