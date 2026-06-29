@@ -71,6 +71,21 @@ TRUSTED_PROXY = os.getenv("TRUSTED_PROXY", "0").lower() in ("1", "true", "yes", 
 RAW_ALLOWED_ORIGINS = os.getenv("ALLOWED_ORIGINS", "*").strip()
 ALLOWED_ORIGINS = [o.strip() for o in RAW_ALLOWED_ORIGINS.split(",") if o.strip()] if RAW_ALLOWED_ORIGINS != "*" else ["*"]
 
+DISABLE_RATE_LIMIT = os.getenv("DISABLE_RATE_LIMIT", "").strip().lower() in ("1", "true", "yes", "y")
+RATE_LIMIT_CALLS = int(os.getenv("RATE_LIMIT_CALLS", "10"))
+RATE_LIMIT_SECONDS = int(os.getenv("RATE_LIMIT_SECONDS", "60"))
+
+INCLUDE_TIMINGS = os.getenv("INCLUDE_TIMINGS", "1").strip().lower() in ("1", "true", "yes", "y")
+# =========== VARIABLES : server limits and security settings ===========
+
+
+# =========== VARIABLES : pgvector configuration ===========
+SUPABASE_URL = os.getenv("SUPABASE_URL", "").strip()
+SUPABASE_SERVICE_ROLE_KEY = os.getenv("SUPABASE_SERVICE_ROLE_KEY", "").strip()
+PGVECTOR_ENABLED = bool(SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY)
+# =========== VARIABLES : pgvector configuration ===========
+
+
 # =========== VARIABLES : White-label bot identity ===========
 BOT_NAME = os.getenv("BOT_NAME", "Assistant")
 BOT_DESCRIPTION = os.getenv("BOT_DESCRIPTION", "AI-powered knowledge assistant")
