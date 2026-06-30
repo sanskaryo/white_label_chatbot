@@ -100,3 +100,12 @@ BOT_NAME = os.getenv("BOT_NAME", "Assistant")
 BOT_DESCRIPTION = os.getenv("BOT_DESCRIPTION", "AI-powered knowledge assistant")
 ADMIN_EMAIL = os.getenv("ADMIN_EMAIL", "").strip()
 # =========== VARIABLES : White-label bot identity ===========
+
+
+# =========== VARIABLES : Langfuse LLM observability ===========
+LANGFUSE_PUBLIC_KEY = os.getenv("LANGFUSE_PUBLIC_KEY", "").strip()
+LANGFUSE_SECRET_KEY = os.getenv("LANGFUSE_SECRET_KEY", "").strip()
+LANGFUSE_HOST = os.getenv("LANGFUSE_HOST", "https://cloud.langfuse.com").strip()
+LANGFUSE_LOG_PROMPTS = os.getenv("LANGFUSE_LOG_PROMPTS", "true").lower() in ("1", "true", "yes", "y")
+LANGFUSE_ENABLED = bool(LANGFUSE_PUBLIC_KEY and LANGFUSE_SECRET_KEY)
+# =========== VARIABLES : Langfuse LLM observability ===========

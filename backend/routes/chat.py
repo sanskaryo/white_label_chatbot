@@ -19,6 +19,7 @@ from analytics_db import log_chat
 from activity import touch_session
 from sessions_db import upsert_visitor_session
 from cache import find_cached_answer, record_cache_hit, maybe_promote_to_cache
+from observability import create_chat_trace, finalize_trace, flush_safe
 
 try:
     from pgvector_store import pgvector_store
@@ -113,6 +114,9 @@ async def chat_endpoint(body: ChatRequest, request: Request, background_tasks: B
     if not question:
         raise HTTPException(status_code=400, detail="Question is required")
 
+    # FLOW-2b: Open Langfuse trace for this request — no-op if Langfuse is disabled
+    lf_trace = create_chat_trace(question, session_id=session_id, department_slug=dept_slug)
+
     question = sanitize_input(question)
     if not question:
         raise HTTPException(status_code=400, detail="Invalid input detected")
@@ -123,6 +127,8 @@ async def chat_endpoint(body: ChatRequest, request: Request, background_tasks: B
         background_tasks.add_task(touch_session, session_id, dept_slug)
         background_tasks.add_task(log_chat, question=question, route="blocked", session_id=session_id, department_slug=dept_slug, blocked_word_matched=matched_word)
         background_tasks.add_task(upsert_visitor_session, session_id, question, "blocked", 0.0, dept_slug, device_hint, referrer_page)
+        background_tasks.add_task(finalize_trace, lf_trace, "blocked", 0.0)
+        background_tasks.add_task(flush_safe)
         return {"answer": "I'm not able to answer that question.", "sources": [], "blocked": True}
 
     # FLOW-4: Check if a human correction exists — log correction_id for accountability
@@ -132,6 +138,8 @@ async def chat_endpoint(body: ChatRequest, request: Request, background_tasks: B
         background_tasks.add_task(touch_session, session_id, dept_slug)
         background_tasks.add_task(log_chat, question=question, answer=correction["corrected_answer"], route="correction", response_time_ms=elapsed_ms, session_id=session_id, department_slug=dept_slug, correction_id=correction.get("id"))
         background_tasks.add_task(upsert_visitor_session, session_id, question, "correction", elapsed_ms, dept_slug, device_hint, referrer_page)
+        background_tasks.add_task(finalize_trace, lf_trace, "correction", elapsed_ms, correction["corrected_answer"])
+        background_tasks.add_task(flush_safe)
         return {
             "answer": correction["corrected_answer"],
             "sources": [{"title": "Verified Answer", "url": "", "category": "correction", "section_type": "exact", "snippet": ""}],
@@ -146,6 +154,8 @@ async def chat_endpoint(body: ChatRequest, request: Request, background_tasks: B
         background_tasks.add_task(log_chat, question=question, answer=cached["answer"], route="cache", response_time_ms=elapsed_ms, session_id=session_id, department_slug=dept_slug)
         background_tasks.add_task(upsert_visitor_session, session_id, question, "cache", elapsed_ms, dept_slug, device_hint, referrer_page)
         background_tasks.add_task(record_cache_hit, cached["matched_norm"])
+        background_tasks.add_task(finalize_trace, lf_trace, "cache", elapsed_ms, cached["answer"])
+        background_tasks.add_task(flush_safe)
         return {
             "answer": cached["answer"],
             "sources": [{"title": "Cached Answer", "url": "", "category": "cache", "section_type": cached.get("match_type", "exact"), "snippet": ""}],
@@ -154,7 +164,7 @@ async def chat_endpoint(body: ChatRequest, request: Request, background_tasks: B
 
     # FLOW-6: Run RAG search to find relevant context chunks
     top_k = body.top_k or DEFAULT_TOP_K
-    results = await run_in_threadpool(service.search, question, top_k, timings)
+    results = await run_in_threadpool(service.search, question, top_k, timings, lf_trace)
 
     context_parts = [r["text"] for r in results]
     sources = [
@@ -171,7 +181,7 @@ async def chat_endpoint(body: ChatRequest, request: Request, background_tasks: B
     context = "\n\n---\n\n".join(context_parts) if context_parts else ""
 
     # FLOW-7: Generate answer from LLM using retrieved context
-    answer = await run_in_threadpool(service.generate_answer, question, context, timings, body.conversation_history)
+    answer = await run_in_threadpool(service.generate_answer, question, context, timings, body.conversation_history, lf_trace)
 
     total_ms = round((time.perf_counter() - t_start) * 1000, 2)
     timings["total_ms"] = total_ms
@@ -182,6 +192,8 @@ async def chat_endpoint(body: ChatRequest, request: Request, background_tasks: B
     background_tasks.add_task(log_chat, question=question, answer=answer, route="rag", sources_count=len(results), response_time_ms=total_ms, session_id=session_id, department_slug=dept_slug)
     background_tasks.add_task(upsert_visitor_session, session_id, question, "rag", total_ms, dept_slug, device_hint, referrer_page)
     background_tasks.add_task(maybe_promote_to_cache, question_norm, question, answer, "rag")
+    background_tasks.add_task(finalize_trace, lf_trace, "rag", total_ms, answer)
+    background_tasks.add_task(flush_safe)
 
     # FLOW-9: Build and return response
     response = {"answer": answer, "sources": sources, "route": "rag"}
