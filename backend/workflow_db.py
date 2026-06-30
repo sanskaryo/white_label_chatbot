@@ -21,4 +21,5 @@ from db import (
     list_departments, create_department, update_department, delete_department,
     list_users, get_user_by_email, create_user, update_user, deactivate_user,
     get_moderation_summary, get_blocked_interactions,
+    get_widget_config, list_widget_configs, upsert_widget_config, delete_widget_config,
 )

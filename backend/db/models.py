@@ -164,6 +164,21 @@ class TestCase(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, default=lambda: datetime.now(timezone.utc), index=True)
     is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True, index=True)
 
+
+class WidgetConfig(Base):
+    __tablename__ = "widget_configs"
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    department_slug: Mapped[Optional[str]] = mapped_column(String(100), nullable=True, unique=True, index=True)  # NULL = global default
+    bot_name: Mapped[str] = mapped_column(String(120), nullable=False, default="AskGLA")
+    welcome_message: Mapped[str] = mapped_column(Text, nullable=False, default="Hi! I'm AskGLA. How can I help you today?")
+    starter_questions: Mapped[Optional[List[str]]] = mapped_column(JSON, nullable=True)  # list[str], up to 4 shown
+    theme_color: Mapped[str] = mapped_column(String(20), nullable=False, default="#1a3a2a")
+    accent_color: Mapped[str] = mapped_column(String(20), nullable=False, default="#c9a227")
+    position: Mapped[str] = mapped_column(String(20), nullable=False, default="bottom-right")
+    is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True, index=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, default=lambda: datetime.now(timezone.utc))
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
+
 # =========== ORM MODELS ===========
 
 

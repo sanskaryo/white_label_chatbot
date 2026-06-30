@@ -8,7 +8,7 @@ from .connection import (
 from .models import (
     PredefinedQuestion, FlaggedResponse, Correction, BlockedWord,
     SystemSetting, AuditLog, UploadDocument, UploadChunk,
-    Department, AdminUser,
+    Department, AdminUser, TestCase, WidgetConfig,
 )
 
 from .audit import (
@@ -67,4 +67,11 @@ from .test_cases import (
 from .moderation import (
     get_moderation_summary,
     get_blocked_interactions,
+)
+
+from .widget_config import (
+    get_widget_config,
+    list_widget_configs,
+    upsert_widget_config,
+    delete_widget_config,
 )

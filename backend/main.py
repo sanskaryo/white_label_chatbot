@@ -18,7 +18,7 @@ import sessions_db    # registers VisitorSession with Base before init_workflow_
 import cache          # imported here so init_cache() is available after init_workflow_db
 import observability  # imported here so init_langfuse() can run after cache init
 
-from routes import chat, admin, corrections, flagged, blocked_words, uploads, feedback, audit, rbac, departments, users, analytics, activity, sessions, cache_admin, exports, console, tester, moderation
+from routes import chat, admin, corrections, flagged, blocked_words, uploads, feedback, audit, rbac, departments, users, analytics, activity, sessions, cache_admin, exports, console, tester, moderation, widget
 # ================== IMPORTS ==================
 
 
@@ -88,6 +88,11 @@ FRONTEND_DIST = Path("frontend/dist")
 if (FRONTEND_DIST / "assets").exists():
     app.mount("/assets", StaticFiles(directory=FRONTEND_DIST / "assets"), name="frontend-assets")
 
+# Serve the embeddable AskGLA widget script at /widget/askgla-widget.js
+WIDGET_DIR = Path("static/widget")
+if WIDGET_DIR.exists():
+    app.mount("/widget", StaticFiles(directory=WIDGET_DIR), name="askgla-widget")
+
 # =========== INCLUDE ROUTERS ===========
 app.include_router(chat.router)
 app.include_router(rbac.router, prefix="/api/admin/rbac", tags=["auth"])
@@ -108,6 +113,8 @@ app.include_router(exports.router, prefix="/api/admin", tags=["admin"])
 app.include_router(console.router, prefix="/api/admin", tags=["admin"])
 app.include_router(tester.router, prefix="/api/admin", tags=["admin"])
 app.include_router(moderation.router, prefix="/api/admin", tags=["admin"])
+app.include_router(widget.public_router, tags=["widget"])
+app.include_router(widget.admin_router, prefix="/api/admin", tags=["admin"])
 # =========== INCLUDE ROUTERS ===========
 
 # =========== APP SETUP ===========
