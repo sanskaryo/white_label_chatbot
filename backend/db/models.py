@@ -41,6 +41,7 @@ class FlaggedResponse(Base):
     tester_id: Mapped[Optional[str]] = mapped_column(String(120), nullable=True)
     chat_id: Mapped[Optional[str]] = mapped_column(String(80), nullable=True)
     status: Mapped[str] = mapped_column(String(24), nullable=False, default="pending", index=True)
+    admin_note: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     reviewed_by: Mapped[Optional[str]] = mapped_column(String(120), nullable=True)
     reviewed_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, default=lambda: datetime.now(timezone.utc), index=True)

@@ -86,16 +86,31 @@ def find_best_correction(question: str, threshold: float = 0.90) -> Optional[Dic
 # =========== FUNCTION ===========
 # ROLE: Return all active corrections for the admin panel
 def list_corrections(limit: int = 100) -> List[Dict[str, Any]]:
-    ''' Return active correction records ordered newest first '''
+    ''' Return active correction records ordered newest first with full fields '''
 
-    # FLOW-1: Query active corrections
     with session_scope() as session:
         rows = session.execute(
             select(Correction).where(Correction.is_active.is_(True)).order_by(Correction.updated_at.desc()).limit(limit)
         ).scalars().all()
 
-        # FLOW-2: Return as list of dicts
-        return [{"id": r.id, "question": r.question, "corrected_answer": r.corrected_answer, "admin_note": r.admin_note, "approved_by": r.approved_by} for r in rows]
+        return [_correction_to_dict(r) for r in rows]
+# =========== FUNCTION ===========
+
+
+# =========== FUNCTION ===========
+# ROLE: Serialize Correction ORM row to full dict
+def _correction_to_dict(row: Correction) -> Dict[str, Any]:
+    return {
+        "id": row.id,
+        "question": row.question,
+        "corrected_answer": row.corrected_answer,
+        "admin_note": row.admin_note,
+        "approved_by": row.approved_by,
+        "source_flagged_id": row.source_flagged_id,
+        "is_active": row.is_active,
+        "created_at": row.created_at.isoformat() if row.created_at else None,
+        "updated_at": row.updated_at.isoformat() if row.updated_at else None,
+    }
 # =========== FUNCTION ===========
 
 
@@ -124,4 +139,57 @@ def create_direct_correction(question: str, corrected_answer: str, admin_note: s
     # FLOW-4: Invalidate cache so correction takes effect immediately
     _invalidate_corrections_cache()
     return result
+# =========== FUNCTION ===========
+
+
+# =========== FUNCTION ===========
+# ROLE: Update corrected_answer or admin_note on an existing correction
+def update_correction(
+    correction_id: int,
+    corrected_answer: Optional[str] = None,
+    admin_note: Optional[str] = None,
+    updated_by: str = "admin",
+) -> Dict[str, Any]:
+    ''' Edit answer or note on an active correction, log the change, invalidate cache '''
+
+    # FLOW-1: Load correction
+    with session_scope() as session:
+        row = session.get(Correction, correction_id)
+        if not row:
+            return {"error": "not found"}
+        if not row.is_active:
+            return {"error": "correction is deactivated"}
+
+        # FLOW-2: Apply only supplied fields
+        if corrected_answer is not None:
+            row.corrected_answer = corrected_answer
+        if admin_note is not None:
+            row.admin_note = admin_note
+
+        log_audit_action(session, "correction_updated", f"Correction #{correction_id}", admin_id=updated_by)
+
+        session.flush()
+        result = _correction_to_dict(row)
+
+    # FLOW-3: Invalidate so edited answer is picked up immediately
+    _invalidate_corrections_cache()
+    return result
+# =========== FUNCTION ===========
+
+
+# =========== FUNCTION ===========
+# ROLE: Soft-delete a correction so it stops being matched
+def deactivate_correction(correction_id: int, deactivated_by: str = "admin") -> Dict[str, Any]:
+    ''' Set is_active=False, log action, invalidate cache — returns error dict if not found '''
+
+    with session_scope() as session:
+        row = session.get(Correction, correction_id)
+        if not row:
+            return {"error": "not found"}
+
+        row.is_active = False
+        log_audit_action(session, "correction_deactivated", f"Correction #{correction_id}: {row.question[:80]}", admin_id=deactivated_by)
+
+    _invalidate_corrections_cache()
+    return {"id": correction_id, "is_active": False}
 # =========== FUNCTION ===========

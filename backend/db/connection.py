@@ -92,6 +92,7 @@ def _run_migrations() -> None:
         "ALTER TABLE visitor_sessions ADD COLUMN cache_count INTEGER NOT NULL DEFAULT 0",
         "ALTER TABLE chat_logs ADD COLUMN blocked_word_matched VARCHAR(100)",
         "ALTER TABLE chat_logs ADD COLUMN correction_id INTEGER",
+        "ALTER TABLE flagged_responses ADD COLUMN admin_note TEXT",
     ]
 
     # FLOW-2: Run each one and ignore errors (column probably already exists)

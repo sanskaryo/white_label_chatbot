@@ -1,42 +1,59 @@
-# WHAT DOES THIS FILE DO: Blocked words management endpoints
+# WHAT DOES THIS FILE DO: blocked words management endpoints — list, add, delete
 
 # ================== IMPORTS ==================
-from fastapi import APIRouter, HTTPException, Request
+from typing import Any, Dict, Optional
+
+from fastapi import APIRouter, HTTPException, Query
+from pydantic import BaseModel
+
 from workflow_db import list_blocked_words, add_blocked_word, delete_blocked_word
 # ================== IMPORTS ==================
+
 
 router = APIRouter()
 
 
-# ROLE: List all blocked words
+# =========== SCHEMA ===========
+class AddBlockedWordBody(BaseModel):
+    word: str
+    reason: Optional[str] = ""
+    added_by: Optional[str] = "admin"
+# =========== SCHEMA ===========
+
+
+# =========== FUNCTION ===========
+# ROLE: List all active blocked words with trigger counts
 @router.get("/blocked-words")
-def list_blocked_words_endpoint():
-    ''' Return list of blocked words/phrases '''
+def list_blocked_words_endpoint() -> Dict[str, Any]:
+    ''' Return blocked words with created_at and how many times each was triggered in chat logs '''
+
     return {"items": list_blocked_words()}
+# =========== FUNCTION ===========
 
 
-# ROLE: Add new blocked word
+# =========== FUNCTION ===========
+# ROLE: Add a new blocked word or reactivate an existing one
 @router.post("/blocked-words")
-async def add_blocked_word_endpoint(request: Request):
-    ''' Add word or phrase to blocklist '''
+def add_blocked_word_endpoint(body: AddBlockedWordBody) -> Dict[str, Any]:
+    ''' Add word or phrase to blocklist — reactivates if it was previously deleted '''
 
-    # FLOW-1: Parse and validate request
-    data = await request.json()
-    word = data.get("word", "").strip()
-
-    # FLOW-2: Validate word required
+    word = (body.word or "").strip()
     if not word:
         raise HTTPException(status_code=400, detail="word is required")
 
-    # FLOW-3: Add to blocklist with metadata
-    result = add_blocked_word(word, reason=data.get("reason", ""), added_by=data.get("added_by", "admin"))
-
-    return result
+    return add_blocked_word(word, reason=body.reason or "", added_by=body.added_by or "admin")
+# =========== FUNCTION ===========
 
 
-# ROLE: Delete blocked word
+# =========== FUNCTION ===========
+# ROLE: Remove a blocked word by id
 @router.delete("/blocked-words/{word_id}")
-def delete_blocked_word_endpoint(word_id: int):
-    ''' Remove word from blocklist '''
+def delete_blocked_word_endpoint(word_id: int, deleted_by: str = Query("admin")) -> Dict[str, Any]:
+    ''' Soft-delete word from blocklist — it stops matching immediately via cache invalidation '''
+
     ok = delete_blocked_word(word_id)
-    return {"deleted": ok}
+    if not ok:
+        raise HTTPException(status_code=404, detail="blocked word not found")
+
+    return {"deleted": True, "word_id": word_id}
+# =========== FUNCTION ===========

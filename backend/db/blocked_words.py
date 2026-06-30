@@ -4,7 +4,7 @@
 import threading
 from typing import Any, Dict, List, Optional
 
-from sqlalchemy import select
+from sqlalchemy import func, select
 
 from .connection import session_scope
 from .models import BlockedWord
@@ -70,18 +70,41 @@ def is_question_blocked(question: str) -> Optional[str]:
 
 
 # =========== FUNCTION ===========
-# ROLE: Return all active blocked word records for the admin panel
+# ROLE: Return all active blocked word records with usage counts for the admin panel
 def list_blocked_words() -> List[Dict[str, Any]]:
-    ''' Return active blocked words ordered newest first '''
+    ''' Return active blocked words with trigger_count and created_at, newest first '''
 
-    # FLOW-1: Query active blocked words
+    # local import — avoids circular: db/ -> analytics_db -> workflow_db -> db/
+    from analytics_db import ChatLog
+
     with session_scope() as session:
+
+        # FLOW-1: Fetch active blocked word rows
         rows = session.execute(
             select(BlockedWord).where(BlockedWord.is_active.is_(True)).order_by(BlockedWord.created_at.desc())
         ).scalars().all()
 
-        # FLOW-2: Return as list of dicts
-        return [{"id": r.id, "word": r.word, "reason": r.reason, "added_by": r.added_by} for r in rows]
+        # FLOW-2: Fetch trigger counts grouped by matched word in one query
+        count_rows = session.execute(
+            select(ChatLog.blocked_word_matched, func.count(ChatLog.id).label("cnt"))
+            .where(ChatLog.blocked_word_matched.isnot(None))
+            .group_by(ChatLog.blocked_word_matched)
+        ).all()
+
+    # FLOW-3: Merge counts into word list in Python — avoids complex JOIN
+    trigger_counts = {r.blocked_word_matched: r.cnt for r in count_rows}
+
+    return [
+        {
+            "id": r.id,
+            "word": r.word,
+            "reason": r.reason,
+            "added_by": r.added_by,
+            "created_at": r.created_at.isoformat() if r.created_at else None,
+            "trigger_count": trigger_counts.get(r.word.lower(), 0),
+        }
+        for r in rows
+    ]
 # =========== FUNCTION ===========
 
 

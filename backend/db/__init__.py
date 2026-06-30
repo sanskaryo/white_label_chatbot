@@ -22,11 +22,12 @@ from .blocked_words import (
 
 from .corrections import (
     find_best_correction, list_corrections, create_direct_correction,
+    update_correction, deactivate_correction,
 )
 
 from .flagged import (
-    create_flagged_response, list_flagged_responses,
-    approve_flagged_response, reject_flagged_response,
+    create_flagged_response, list_flagged_responses, get_flagged_response,
+    get_flagged_stats, approve_flagged_response, reject_flagged_response,
 )
 
 from .uploads import (
@@ -61,4 +62,9 @@ from .test_cases import (
     list_test_cases,
     create_test_case,
     deactivate_test_case,
+)
+
+from .moderation import (
+    get_moderation_summary,
+    get_blocked_interactions,
 )
