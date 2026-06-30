@@ -13,7 +13,12 @@ from core.dependencies import set_service, set_rate_limiter
 from utils import setup_logging, log_step
 from workflow_db import init_workflow_db, get_active_upload_chunks
 
-from routes import chat, admin, corrections, flagged, blocked_words, uploads, feedback, audit
+import analytics_db   # registers ChatLog with Base before init_workflow_db runs
+import sessions_db    # registers VisitorSession with Base before init_workflow_db runs
+import cache          # imported here so init_cache() is available after init_workflow_db
+import observability  # imported here so init_langfuse() can run after cache init
+
+from routes import chat, admin, corrections, flagged, blocked_words, uploads, feedback, audit, rbac, departments, users, analytics, activity, sessions, cache_admin, exports, console, tester, moderation, widget
 # ================== IMPORTS ==================
 
 
@@ -25,6 +30,8 @@ UPLOADS_DIR = Path("uploads")
 UPLOADS_DIR.mkdir(parents=True, exist_ok=True)
 
 init_workflow_db()
+cache.init_cache()
+observability.init_langfuse()
 
 service = RAGService()
 rate_limiter = RateLimiter(max_requests=10, window_seconds=60)
@@ -81,8 +88,14 @@ FRONTEND_DIST = Path("frontend/dist")
 if (FRONTEND_DIST / "assets").exists():
     app.mount("/assets", StaticFiles(directory=FRONTEND_DIST / "assets"), name="frontend-assets")
 
+# Serve the embeddable AskGLA widget script at /widget/askgla-widget.js
+WIDGET_DIR = Path("static/widget")
+if WIDGET_DIR.exists():
+    app.mount("/widget", StaticFiles(directory=WIDGET_DIR), name="askgla-widget")
+
 # =========== INCLUDE ROUTERS ===========
 app.include_router(chat.router)
+app.include_router(rbac.router, prefix="/api/admin/rbac", tags=["auth"])
 app.include_router(admin.router, prefix="/api/admin", tags=["admin"])
 app.include_router(corrections.router, prefix="/api/admin", tags=["admin"])
 app.include_router(flagged.router, prefix="/api/admin", tags=["admin"])
@@ -90,6 +103,18 @@ app.include_router(blocked_words.router, prefix="/api/admin", tags=["admin"])
 app.include_router(uploads.router, prefix="/api/admin", tags=["admin"])
 app.include_router(feedback.router, prefix="/api", tags=["feedback"])
 app.include_router(audit.router, prefix="/api/admin", tags=["admin"])
+app.include_router(departments.router, prefix="/api/admin", tags=["admin"])
+app.include_router(users.router, prefix="/api/admin", tags=["admin"])
+app.include_router(analytics.router, prefix="/api/admin", tags=["admin"])
+app.include_router(activity.router, prefix="/api/admin", tags=["admin"])
+app.include_router(sessions.router, prefix="/api/admin", tags=["admin"])
+app.include_router(cache_admin.router, prefix="/api/admin", tags=["admin"])
+app.include_router(exports.router, prefix="/api/admin", tags=["admin"])
+app.include_router(console.router, prefix="/api/admin", tags=["admin"])
+app.include_router(tester.router, prefix="/api/admin", tags=["admin"])
+app.include_router(moderation.router, prefix="/api/admin", tags=["admin"])
+app.include_router(widget.public_router, tags=["widget"])
+app.include_router(widget.admin_router, prefix="/api/admin", tags=["admin"])
 # =========== INCLUDE ROUTERS ===========
 
 # =========== APP SETUP ===========

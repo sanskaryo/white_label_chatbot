@@ -49,6 +49,13 @@ EMBED_CACHE_VERSION = 2
 
 FILE_CACHE_TTL_SEC = int(os.getenv("FILE_CACHE_TTL_SEC", str(24 * 3600)))
 
+# question response cache settings (Upstash Redis)
+UPSTASH_REDIS_REST_URL = os.getenv("UPSTASH_REDIS_REST_URL", "").strip()
+UPSTASH_REDIS_REST_TOKEN = os.getenv("UPSTASH_REDIS_REST_TOKEN", "").strip()
+REDIS_RESPONSE_CACHE_TTL = int(os.getenv("REDIS_RESPONSE_CACHE_TTL", "21600"))  # seconds, 0 = never expire
+CACHE_MIN_HITS = int(os.getenv("CACHE_MIN_HITS", "5"))                          # RAG hits before promoting to cache
+CACHE_FUZZY_THRESHOLD = float(os.getenv("CACHE_FUZZY_THRESHOLD", "0.97"))       # higher than corrections (0.90) — near-identical only
+
 QUERY_EMBED_CACHE_SIZE = max(
     0,
     int(os.getenv("QUERY_EMBED_CACHE_SIZE", "512"))
@@ -79,14 +86,26 @@ INCLUDE_TIMINGS = os.getenv("INCLUDE_TIMINGS", "1").strip().lower() in ("1", "tr
 # =========== VARIABLES : server limits and security settings ===========
 
 
-# =========== VARIABLES : pgvector configuration ===========
+# =========== VARIABLES : pgvector and Supabase storage configuration ===========
 SUPABASE_URL = os.getenv("SUPABASE_URL", "").strip()
 SUPABASE_SERVICE_ROLE_KEY = os.getenv("SUPABASE_SERVICE_ROLE_KEY", "").strip()
 PGVECTOR_ENABLED = bool(SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY)
-# =========== VARIABLES : pgvector configuration ===========
+
+SUPABASE_STORAGE_BUCKET = os.getenv("SUPABASE_STORAGE_BUCKET", "chatbot-uploads").strip()
+# =========== VARIABLES : pgvector and Supabase storage configuration ===========
 
 
 # =========== VARIABLES : White-label bot identity ===========
 BOT_NAME = os.getenv("BOT_NAME", "Assistant")
 BOT_DESCRIPTION = os.getenv("BOT_DESCRIPTION", "AI-powered knowledge assistant")
+ADMIN_EMAIL = os.getenv("ADMIN_EMAIL", "").strip()
 # =========== VARIABLES : White-label bot identity ===========
+
+
+# =========== VARIABLES : Langfuse LLM observability ===========
+LANGFUSE_PUBLIC_KEY = os.getenv("LANGFUSE_PUBLIC_KEY", "").strip()
+LANGFUSE_SECRET_KEY = os.getenv("LANGFUSE_SECRET_KEY", "").strip()
+LANGFUSE_HOST = os.getenv("LANGFUSE_HOST", "https://cloud.langfuse.com").strip()
+LANGFUSE_LOG_PROMPTS = os.getenv("LANGFUSE_LOG_PROMPTS", "true").lower() in ("1", "true", "yes", "y")
+LANGFUSE_ENABLED = bool(LANGFUSE_PUBLIC_KEY and LANGFUSE_SECRET_KEY)
+# =========== VARIABLES : Langfuse LLM observability ===========

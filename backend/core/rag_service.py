@@ -351,7 +351,7 @@ class RAGService:
             return False
 
     # ROLE: Perform hybrid search combining vector similarity, BM25, and cross-encoder reranking
-    def search(self, query: str, top_k: int = 5, timings: Optional[dict] = None) -> List[dict]:
+    def search(self, query: str, top_k: int = 5, timings: Optional[dict] = None, langfuse_trace: Optional[Any] = None) -> List[dict]:
         ''' Return top-k documents ranked by hybrid score; track timing if requested '''
 
         # FLOW-1: Snapshot index under lock to avoid mutations during search
@@ -500,7 +500,17 @@ class RAGService:
             timings["rerank_ms"] = 0.0
             timings["rerank_status"] = "disabled"
 
-        return self._deduplicate_chunks(candidates[:top_k])
+        results = self._deduplicate_chunks(candidates[:top_k])
+
+        # FLOW-21: Log search span to Langfuse if trace provided — never raises
+        if langfuse_trace is not None:
+            try:
+                from observability import log_search_span
+                log_search_span(langfuse_trace, query, results, top_k, timings or {})
+            except Exception:
+                pass
+
+        return results
 
     # ROLE: Remove near-duplicate chunks based on sequence similarity
     @staticmethod
@@ -531,7 +541,7 @@ class RAGService:
         return unique
 
     # ROLE: Generate answer using Azure OpenAI with RAG context and conversation history
-    def generate_answer(self, question: str, context: str, timings: Optional[dict] = None, conversation_history: Optional[list] = None) -> str:
+    def generate_answer(self, question: str, context: str, timings: Optional[dict] = None, conversation_history: Optional[list] = None, langfuse_trace: Optional[Any] = None) -> str:
         ''' Call Azure OpenAI with system prompt, context, and history; return generated answer '''
 
         # Import here to avoid circular imports
@@ -578,5 +588,21 @@ class RAGService:
 
         # FLOW-10: Extract and sanitize response text
         raw = response.choices[0].message.content.strip()
-        return sanitize_response(raw)
+        answer = sanitize_response(raw)
+
+        # FLOW-11: Log LLM generation to Langfuse if trace provided — never raises
+        if langfuse_trace is not None:
+            try:
+                from observability import log_llm_generation
+                log_llm_generation(
+                    langfuse_trace,
+                    messages=messages,
+                    answer=answer,
+                    temperature=_temperature,
+                    usage=getattr(response, "usage", None),
+                )
+            except Exception:
+                pass
+
+        return answer
 # =========== RAG SERVICE ===========

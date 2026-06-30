@@ -390,3 +390,25 @@ class PgVectorStore:
     # =========== FUNCTION ===========
 
 # =========== CLASS ===========
+
+
+# =========== INITIALIZATION ===========
+# Initialize pgvector_store instance for use in routes
+
+try:
+    from supabase import create_client
+    from config import SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, PGVECTOR_ENABLED
+
+    if PGVECTOR_ENABLED:
+        _supabase_client = create_client(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
+        pgvector_store = PgVectorStore(_supabase_client)
+        logger.info("pgvector_store instance initialized with Supabase")
+    else:
+        pgvector_store = None
+        logger.info("pgvector_store disabled (Supabase credentials not configured)")
+
+except Exception as exc:
+    logger.warning(f"Failed to initialize pgvector_store: {exc}")
+    pgvector_store = None
+
+# =========== INITIALIZATION ===========

@@ -1,0 +1,29 @@
+{
+  "manifest_version": 3,
+  "name": "AskGLA Widget",
+  "version": "1.0.0",
+  "description": "Injects the AskGLA chatbot widget onto any webpage. Configure the API URL and department from the extension popup.",
+
+  "permissions": ["storage"],
+
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "AskGLA Settings"
+  },
+
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["content.js"],
+      "run_at": "document_idle",
+      "all_frames": false
+    }
+  ],
+
+  "web_accessible_resources": [
+    {
+      "resources": ["widget.js"],
+      "matches": ["<all_urls>"]
+    }
+  ]
+}

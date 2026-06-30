@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AskGLA Widget Test Page</title>
+  <style>
+    body { font-family: Arial, sans-serif; max-width: 800px; margin: 60px auto; padding: 0 20px; color: #333; }
+    h1 { color: #1a3a2a; }
+    .info { background: #f0f7f0; border-left: 4px solid #1a3a2a; padding: 14px 18px; border-radius: 4px; margin: 20px 0; }
+    p { line-height: 1.7; }
+  </style>
+</head>
+<body>
+  <h1>GLA University — Test Page</h1>
+  <div class="info">
+    <strong>Widget test page.</strong> The AskGLA chat button should appear in the bottom-right corner.
+    Click it to open the chat.
+  </div>
+  <p>This is a blank page simulating any third-party website. The widget is loaded from your local backend via the script tag below.</p>
+  <p>Dummy content: Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.</p>
+
+  <!-- AskGLA Widget — change data-dept to test different department configs -->
+  <script
+    src="http://localhost:8000/widget/askgla-widget.js"
+    data-api-base="http://localhost:8000"
+    data-dept="admissions">
+  </script>
+</body>
+</html>
