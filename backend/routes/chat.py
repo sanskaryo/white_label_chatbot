@@ -16,6 +16,7 @@ from core.dependencies import get_service, get_rate_limiter
 from utils import sanitize_input, timings_payload
 from workflow_db import get_workflow_summary, is_question_blocked, find_best_correction
 from analytics_db import log_chat
+from activity import touch_session
 
 try:
     from pgvector_store import pgvector_store
@@ -114,6 +115,7 @@ async def chat_endpoint(body: ChatRequest, request: Request, background_tasks: B
 
     # FLOW-3: Check if question is blocked — log and return early
     if is_question_blocked(question):
+        background_tasks.add_task(touch_session, session_id, dept_slug)
         background_tasks.add_task(log_chat, question=question, route="blocked", session_id=session_id, department_slug=dept_slug)
         return {"answer": "I'm not able to answer that question.", "sources": [], "blocked": True}
 
@@ -121,6 +123,7 @@ async def chat_endpoint(body: ChatRequest, request: Request, background_tasks: B
     correction = find_best_correction(question, threshold=CORRECTION_MATCH_THRESHOLD)
     if correction:
         elapsed_ms = round((time.perf_counter() - t_start) * 1000, 2)
+        background_tasks.add_task(touch_session, session_id, dept_slug)
         background_tasks.add_task(
             log_chat,
             question=question,
@@ -161,6 +164,7 @@ async def chat_endpoint(body: ChatRequest, request: Request, background_tasks: B
     timings["total_ms"] = total_ms
 
     # FLOW-7: Log the full RAG interaction in background so response is not delayed
+    background_tasks.add_task(touch_session, session_id, dept_slug)
     background_tasks.add_task(
         log_chat,
         question=question,

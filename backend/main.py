@@ -15,7 +15,7 @@ from workflow_db import init_workflow_db, get_active_upload_chunks
 
 import analytics_db  # registers ChatLog with Base before init_workflow_db runs
 
-from routes import chat, admin, corrections, flagged, blocked_words, uploads, feedback, audit, rbac, departments, users, analytics
+from routes import chat, admin, corrections, flagged, blocked_words, uploads, feedback, audit, rbac, departments, users, analytics, activity
 # ================== IMPORTS ==================
 
 
@@ -96,6 +96,7 @@ app.include_router(audit.router, prefix="/api/admin", tags=["admin"])
 app.include_router(departments.router, prefix="/api/admin", tags=["admin"])
 app.include_router(users.router, prefix="/api/admin", tags=["admin"])
 app.include_router(analytics.router, prefix="/api/admin", tags=["admin"])
+app.include_router(activity.router, prefix="/api/admin", tags=["admin"])
 # =========== INCLUDE ROUTERS ===========
 
 # =========== APP SETUP ===========
