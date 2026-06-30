@@ -117,19 +117,20 @@ async def chat_endpoint(body: ChatRequest, request: Request, background_tasks: B
     if not question:
         raise HTTPException(status_code=400, detail="Invalid input detected")
 
-    # FLOW-3: Check if question is blocked — log and return early
-    if is_question_blocked(question):
+    # FLOW-3: Check if question is blocked — log matched word for accountability and return early
+    matched_word = is_question_blocked(question)
+    if matched_word:
         background_tasks.add_task(touch_session, session_id, dept_slug)
-        background_tasks.add_task(log_chat, question=question, route="blocked", session_id=session_id, department_slug=dept_slug)
+        background_tasks.add_task(log_chat, question=question, route="blocked", session_id=session_id, department_slug=dept_slug, blocked_word_matched=matched_word)
         background_tasks.add_task(upsert_visitor_session, session_id, question, "blocked", 0.0, dept_slug, device_hint, referrer_page)
         return {"answer": "I'm not able to answer that question.", "sources": [], "blocked": True}
 
-    # FLOW-4: Check if a human correction exists — use it instead of RAG
+    # FLOW-4: Check if a human correction exists — log correction_id for accountability
     correction = find_best_correction(question, threshold=CORRECTION_MATCH_THRESHOLD)
     if correction:
         elapsed_ms = round((time.perf_counter() - t_start) * 1000, 2)
         background_tasks.add_task(touch_session, session_id, dept_slug)
-        background_tasks.add_task(log_chat, question=question, answer=correction["corrected_answer"], route="correction", response_time_ms=elapsed_ms, session_id=session_id, department_slug=dept_slug)
+        background_tasks.add_task(log_chat, question=question, answer=correction["corrected_answer"], route="correction", response_time_ms=elapsed_ms, session_id=session_id, department_slug=dept_slug, correction_id=correction.get("id"))
         background_tasks.add_task(upsert_visitor_session, session_id, question, "correction", elapsed_ms, dept_slug, device_hint, referrer_page)
         return {
             "answer": correction["corrected_answer"],

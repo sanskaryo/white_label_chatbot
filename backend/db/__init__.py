@@ -46,3 +46,13 @@ from .departments import (
 from .users import (
     list_users, get_user_by_email, create_user, update_user, deactivate_user,
 )
+
+from .exports import (
+    export_chat_logs,
+    export_blocked_interactions,
+    export_corrections,
+    export_flagged_responses,
+    export_visitor_sessions,
+    export_audit_log,
+    export_blocked_words,
+)

@@ -32,6 +32,10 @@ class ChatLog(Base):
     department_slug: Mapped[Optional[str]] = mapped_column(String(80), nullable=True, index=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, default=lambda: datetime.now(timezone.utc), index=True)
 
+    # accountability columns — populated by the chat pipeline for CSV exports
+    blocked_word_matched: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
+    correction_id: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
+
 # =========== ORM MODEL ===========
 
 
@@ -45,6 +49,8 @@ def log_chat(
     response_time_ms: float = 0.0,
     session_id: Optional[str] = None,
     department_slug: Optional[str] = None,
+    blocked_word_matched: Optional[str] = None,
+    correction_id: Optional[int] = None,
 ) -> None:
     ''' Insert a chat log row, silently skip if anything goes wrong '''
 
@@ -59,6 +65,8 @@ def log_chat(
                 response_time_ms=response_time_ms,
                 session_id=session_id,
                 department_slug=department_slug,
+                blocked_word_matched=blocked_word_matched,
+                correction_id=correction_id,
             )
             session.add(row)
 
